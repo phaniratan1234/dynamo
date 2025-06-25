@@ -1,0 +1,49 @@
+# WORKING CONFIG - Simplified for actual training
+model:
+  base_model_name: "roberta-base"
+  hidden_size: 768
+  
+  # Much smaller LoRA configs that actually work
+  lora_configs:
+    sentiment:
+      rank: 4
+      alpha: 8
+      dropout: 0.1
+    qa:
+      rank: 8
+      alpha: 16
+      dropout: 0.1
+    summarization:
+      rank: 4
+      alpha: 8
+      dropout: 0.1
+    code_generation:
+      rank: 4
+      alpha: 8
+      dropout: 0.1
+    translation:
+      rank: 4
+      alpha: 8
+      dropout: 0.1
+
+training:
+  num_epochs: 2
+  batch_size: 16
+  learning_rate: 5e-4
+  lora_lr: 1e-3
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  patience: 3
+
+data:
+  max_input_length: 256
+  max_target_length: 64
+  sst2_size: 1000      # Small for testing
+  squad_size: 1000     # Small for testing
+  xsum_size: 1000      # Small for testing
+  code_gen_size: 100   # Small for testing
+  translation_size: 1000  # Small for testing
+
+evaluation:
+  eval_batch_size: 32
+  logging_steps: 10

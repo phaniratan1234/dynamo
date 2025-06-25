@@ -1,0 +1,133 @@
+# DYNAMO Configuration File
+# This file contains all the hyperparameters and settings for training DYNAMO
+
+# Model Configuration
+model:
+  base_model_name: "roberta-base"
+  hidden_size: 768
+  freeze_backbone: true
+
+# Task Configuration
+tasks:
+  - "sentiment"
+  - "qa" 
+  - "summarization"
+  - "code_generation"
+  - "translation"
+
+# LoRA Configuration
+lora_configs:
+  sentiment:
+    rank: 16
+    alpha: 32
+    dropout: 0.1
+    target_modules: ["query", "value", "key", "dense"]
+  qa:
+    rank: 24
+    alpha: 48
+    dropout: 0.1
+    target_modules: ["query", "value", "key", "dense"]
+  summarization:
+    rank: 32
+    alpha: 64
+    dropout: 0.1
+    target_modules: ["query", "value", "key", "dense"]
+  code_generation:
+    rank: 32
+    alpha: 64
+    dropout: 0.1
+    target_modules: ["query", "value", "key", "dense"]
+  translation:
+    rank: 32
+    alpha: 64
+    dropout: 0.1
+    target_modules: ["query", "value", "key", "dense"]
+
+# Router Configuration
+router:
+  hidden_sizes: [768, 512, 256]
+  dropout: 0.1
+  activation: "relu"
+  use_layer_norm: true
+  temperature: 1.0
+  min_temperature: 0.1
+
+# Training Configuration
+training:
+  # General
+  num_epochs: 2
+  batch_size: 16
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  
+  # Phase-specific learning rates
+  lora_lr: 5e-4
+  router_lr: 1e-3
+  joint_lr: 2e-4
+  
+  # Temperature annealing
+  gumbel_temperature: 1.0
+  temperature_decay: 0.95
+  min_temperature: 0.1
+  
+  # Curriculum learning
+  curriculum_start_ratio: 0.8
+  curriculum_end_ratio: 0.2
+  
+  # Loss weights
+  load_balance_weight: 0.1
+  efficiency_weight: 0.05
+  consistency_weight: 0.1
+  entropy_regularization_weight: 0.01
+  temperature_regularization_weight: 0.01
+  
+  # Early stopping
+  patience: 5
+
+# Data Configuration
+data:
+  # Dataset paths (adjust these to your actual data paths)
+  sentiment_data_path: "./data/sst2"
+  qa_data_path: "./data/squad"
+  summarization_data_path: "./data/xsum"
+  code_generation_data_path: "./data/code_generation"
+  translation_data_path: "./data/translation"
+  
+  # Data processing
+  max_length: 512
+  max_target_length: 128
+  
+  # Mixed task dataset
+  mixed_task_size: 10000
+  mixed_task_ratio: 0.3
+
+# Evaluation Configuration
+evaluation:
+  eval_batch_size: 32
+  eval_after_each_phase: true
+  logging_steps: 100
+  eval_steps: 500
+  save_steps: 1000
+
+# Logging and Checkpointing
+checkpoint_dir: "./checkpoints"
+log_dir: "./logs"
+use_wandb: false
+wandb_project: "dynamo"
+wandb_tags: ["multi-task", "lora", "routing"]
+experiment_name: "dynamo_experiment"
+
+# System Configuration
+device: "cuda"
+seed: 42
+num_workers: 4
+pin_memory: true
+
+# Inference Configuration
+inference:
+  use_hard_routing: false
+  routing_threshold: 0.5
+  temperature: 0.1
+

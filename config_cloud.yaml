@@ -1,0 +1,64 @@
+# Optimized config for cloud GPU training
+model:
+  base_model_name: "roberta-base"
+  hidden_size: 768
+  num_attention_heads: 12
+  num_layers: 12
+  
+  # LoRA configurations - reduced for faster training
+  lora_configs:
+    sentiment:
+      rank: 8        # Reduced from 16
+      alpha: 16      # Reduced from 32
+      dropout: 0.1
+    qa:
+      rank: 16       # Reduced from 32
+      alpha: 32      # Reduced from 64
+      dropout: 0.1
+    summarization:
+      rank: 12       # Reduced from 24
+      alpha: 24      # Reduced from 48
+      dropout: 0.1
+    code_generation:
+      rank: 10       # Reduced from 20
+      alpha: 20      # Reduced from 40
+      dropout: 0.1
+    translation:
+      rank: 14       # Reduced from 28
+      alpha: 28      # Reduced from 56
+      dropout: 0.1
+
+training:
+  # Optimized for cloud
+  num_epochs: 3              # Reduced from 10
+  batch_size: 32             # Increased for GPU
+  learning_rate: 2e-4        # Slightly higher
+  lora_lr: 1e-3             # Higher for LoRA
+  router_lr: 5e-4           # Higher for router
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  gradient_accumulation_steps: 2  # Effective batch = 64
+  max_grad_norm: 1.0
+  patience: 2               # Reduced early stopping patience
+
+data:
+  # Smaller datasets for faster training
+  max_input_length: 256     # Reduced from 512
+  max_target_length: 64     # Reduced from 128
+  sst2_size: 5000          # Reduced
+  squad_size: 10000        # Reduced  
+  xsum_size: 8000          # Reduced
+  code_gen_size: 300       # All MBPP data
+  translation_size: 6000   # Reduced
+  cache_dir: "./cache"
+
+evaluation:
+  eval_batch_size: 64      # Increased
+  logging_steps: 50        # More frequent logging
+  eval_steps: 200         # More frequent eval
+  save_steps: 500         # Less frequent saves
+
+# Cloud-specific settings
+use_wandb: true            # Enable logging
+checkpoint_dir: "./checkpoints"
+output_dir: "./outputs"
