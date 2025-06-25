@@ -344,8 +344,7 @@ class Phase1Trainer:
         checkpoint = {
             'epoch': epoch,
             'val_loss': val_loss,
-            'adapter_state_dict': self.model.adapters.get_adapter(task_name).state_dict(),
-            'config': self.config.__dict__
+            'adapter_state_dict': self.model.adapters.get_adapter(task_name).state_dict()
         }
         
         checkpoint_path = os.path.join(checkpoint_dir, f"best_adapter.pt")
