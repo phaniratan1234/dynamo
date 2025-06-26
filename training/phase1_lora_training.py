@@ -398,7 +398,8 @@ class Phase1Trainer:
             elif isinstance(value, (int, float)):
                 wandb_metrics[f"phase1/{task_name}/{key}"] = value
         
-        wandb.log(wandb_metrics, step=self.global_step)
+        if wandb.run is not None:
+            wandb.log(wandb_metrics, step=self.global_step)
 
 
 def run_phase1_training(config: Config, model: DynamoModel) -> Dict[str, Dict[str, float]]:

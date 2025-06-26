@@ -47,3 +47,7 @@ data:
 evaluation:
   eval_batch_size: 32
   logging_steps: 10
+
+# Weights & Biases settings (DISABLED for testing)
+use_wandb: false
+experiment_name: "dynamo_working_test"

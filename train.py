@@ -19,14 +19,21 @@ logger = get_logger(__name__)
 
 def setup_wandb(config: Config) -> None:
     """Setup Weights & Biases logging."""
-    if config.use_wandb:
-        wandb.init(
-            project=config.wandb_project,
-            name=config.experiment_name,
-            config=config.__dict__,
-            tags=config.wandb_tags
-        )
+    if hasattr(config, 'use_wandb') and config.use_wandb:
+        wandb_config = {
+            'project': getattr(config, 'wandb_project', 'dynamo'),
+            'name': getattr(config, 'experiment_name', 'dynamo_experiment'),
+            'config': config.__dict__,
+        }
+        
+        # Add tags if they exist
+        if hasattr(config, 'wandb_tags'):
+            wandb_config['tags'] = config.wandb_tags
+            
+        wandb.init(**wandb_config)
         logger.info("Weights & Biases initialized")
+    else:
+        logger.info("W&B disabled or not configured - training without logging")
 
 
 def load_checkpoint(model: DynamoModel, checkpoint_path: str) -> Dict[str, Any]:
@@ -130,7 +137,7 @@ def run_evaluation(
     }
     
     # Log to wandb
-    if config.use_wandb:
+    if hasattr(config, 'use_wandb') and config.use_wandb and wandb.run is not None:
         wandb.log({f"{phase_name}_evaluation": evaluation_results})
     
     logger.info(f"{phase_name} evaluation completed")

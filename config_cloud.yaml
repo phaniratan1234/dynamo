@@ -59,6 +59,6 @@ evaluation:
   save_steps: 500         # Less frequent saves
 
 # Cloud-specific settings
-use_wandb: true            # Enable logging
+use_wandb: false            # Disable logging
 checkpoint_dir: "./checkpoints"
 output_dir: "./outputs"

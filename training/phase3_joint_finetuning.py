@@ -724,7 +724,8 @@ class Phase3Trainer:
             elif isinstance(value, (int, float)):
                 wandb_metrics[f"phase3/{key}"] = value
         
-        wandb.log(wandb_metrics, step=self.global_step)
+                        if wandb.run is not None:
+                    wandb.log(wandb_metrics, step=self.global_step)
 
 
 def run_phase3_training(config: Config, model: DynamoModel) -> Dict[str, Any]:
