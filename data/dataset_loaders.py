@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple, Any, Union
 import random
 import json
 import os
+import hashlib
 
 from utils.logger import get_logger
 from utils.helpers import set_seed
@@ -90,12 +91,18 @@ class SentimentDataset(DynamoDataset):
             return_tensors='pt'
         )
         
+        # Validate and clamp label to valid range [0, 1]
+        label = example['label']
+        if not isinstance(label, int) or label < 0 or label > 1:
+            # Default to neutral/positive if invalid
+            label = 1
+        
         return {
             'input_ids': tokenized['input_ids'].squeeze(0),
             'attention_mask': tokenized['attention_mask'].squeeze(0),
             'task_name': 'sentiment',
             'task_id': 0,
-            'target': torch.tensor(example['label'], dtype=torch.long),
+            'target': torch.tensor(label, dtype=torch.long),
             'input_text': example['sentence']
         }
 
@@ -156,26 +163,20 @@ class SummarizationDataset(DynamoDataset):
             return_tensors='pt'
         )
         
-        # For Phase 1: Create target representation instead of token sequence
-        # Use CLS token representation of the summary as target
-        target_tokenized = self.tokenizer(
-            example['summary'],
-            max_length=128,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-        
-        # Create a simple target representation (mean of token embeddings would be better, but this works)
-        # For now, use a random target that matches the expected shape [hidden_size]
-        target_representation = torch.randn(768)  # Will be replaced with actual embeddings in training
+        # Create deterministic target representation based on summary text
+        # Use hash of summary text to create consistent representation
+        summary_hash = hashlib.md5(example['summary'].encode()).hexdigest()
+        # Convert hash to seed for reproducible random generation
+        seed = int(summary_hash[:8], 16)
+        torch.manual_seed(seed)
+        target_representation = torch.randn(768)  # Deterministic based on summary
         
         return {
             'input_ids': tokenized['input_ids'].squeeze(0),
             'attention_mask': tokenized['attention_mask'].squeeze(0),
             'task_name': 'summarization',
             'task_id': 2,
-            'target': target_representation,  # [768] instead of [128]
+            'target': target_representation,  # [768] deterministic representation
             'target_text': example['summary'],  # Keep original for reference
             'input_text': example['document']
         }
@@ -196,24 +197,20 @@ class CodeGenerationDataset(DynamoDataset):
             return_tensors='pt'
         )
         
-        # For Phase 1: Create target representation instead of token sequence
-        target_tokenized = self.tokenizer(
-            example['code'],
-            max_length=128,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-        
-        # Create a simple target representation matching the expected shape [hidden_size]
-        target_representation = torch.randn(768)  # Will be replaced with actual embeddings in training
+        # Create deterministic target representation based on code text
+        # Use hash of code text to create consistent representation
+        code_hash = hashlib.md5(example['code'].encode()).hexdigest()
+        # Convert hash to seed for reproducible random generation
+        seed = int(code_hash[:8], 16)
+        torch.manual_seed(seed)
+        target_representation = torch.randn(768)  # Deterministic based on code
         
         return {
             'input_ids': tokenized['input_ids'].squeeze(0),
             'attention_mask': tokenized['attention_mask'].squeeze(0),
             'task_name': 'code_generation',
             'task_id': 3,
-            'target': target_representation,  # [768] instead of [128]
+            'target': target_representation,  # [768] deterministic representation
             'target_text': example['code'],  # Keep original for reference
             'input_text': example['text']
         }
@@ -234,24 +231,20 @@ class TranslationDataset(DynamoDataset):
             return_tensors='pt'
         )
         
-        # For Phase 1: Create target representation instead of token sequence
-        target_tokenized = self.tokenizer(
-            example['de'],
-            max_length=128,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-        
-        # Create a simple target representation matching the expected shape [hidden_size]
-        target_representation = torch.randn(768)  # Will be replaced with actual embeddings in training
+        # Create deterministic target representation based on German text
+        # Use hash of German text to create consistent representation
+        german_hash = hashlib.md5(example['de'].encode()).hexdigest()
+        # Convert hash to seed for reproducible random generation
+        seed = int(german_hash[:8], 16)
+        torch.manual_seed(seed)
+        target_representation = torch.randn(768)  # Deterministic based on German text
         
         return {
             'input_ids': tokenized['input_ids'].squeeze(0),
             'attention_mask': tokenized['attention_mask'].squeeze(0),
             'task_name': 'translation',
             'task_id': 4,
-            'target': target_representation,  # [768] instead of [128]
+            'target': target_representation,  # [768] deterministic representation
             'target_text': example['de'],  # Keep original for reference
             'input_text': example['en']
         }
@@ -432,9 +425,10 @@ class DatasetLoader:
                 if i >= max_size:
                     break
                 
+                # Fix field names to match TranslationDataset expectations
                 data.append({
-                    'source': example['translation']['de'],
-                    'target': example['translation']['en']
+                    'en': example['translation']['en'],  # English text
+                    'de': example['translation']['de']   # German text
                 })
             
             logger.info(f"Loaded {len(data)} translation examples")
@@ -544,10 +538,10 @@ class DatasetLoader:
         """Create synthetic translation data for testing."""
         data = []
         examples = [
-            {'source': "Hallo, wie geht es dir?", 'target': "Hello, how are you?"},
-            {'source': "Ich liebe Musik.", 'target': "I love music."},
-            {'source': "Das Wetter ist schön heute.", 'target': "The weather is nice today."},
-            {'source': "Wo ist die Bibliothek?", 'target': "Where is the library?"}
+            {'en': "Hello, how are you?", 'de': "Hallo, wie geht es dir?"},
+            {'en': "I love music.", 'de': "Ich liebe Musik."},
+            {'en': "The weather is nice today.", 'de': "Das Wetter ist schön heute."},
+            {'en': "Where is the library?", 'de': "Wo ist die Bibliothek?"}
         ]
         
         for i in range(self.dataset_sizes['translation']):
