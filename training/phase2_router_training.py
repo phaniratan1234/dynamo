@@ -509,7 +509,7 @@ class Phase2Trainer:
     
     def _log_wandb_metrics(self, metrics: Dict[str, float]):
         """Log metrics to Weights & Biases."""
-        if not self.config.use_wandb:
+        if not hasattr(self.config, 'use_wandb') or not self.config.use_wandb:
             return
         
         wandb_metrics = {}
@@ -519,8 +519,12 @@ class Phase2Trainer:
             elif isinstance(value, (int, float)):
                 wandb_metrics[f"phase2/{key}"] = value
         
-                        if wandb.run is not None:
-                    wandb.log(wandb_metrics, step=self.global_step)
+        try:
+            import wandb
+            if wandb.run is not None:
+                wandb.log(wandb_metrics, step=self.global_step)
+        except ImportError:
+            pass  # wandb not installed
 
 
 def run_phase2_training(config: Config, model: DynamoModel) -> Dict[str, float]:

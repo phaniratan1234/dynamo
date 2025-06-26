@@ -707,25 +707,24 @@ class Phase3Trainer:
         
         logger.info(f"Saved Phase 3 checkpoint to {checkpoint_dir}")
     
-    def _log_wandb_metrics(self, metrics: Dict[str, Any]):
+    def _log_wandb_metrics(self, metrics: Dict[str, float]):
         """Log metrics to Weights & Biases."""
-        if not self.config.use_wandb:
+        if not hasattr(self.config, 'use_wandb') or not self.config.use_wandb:
             return
         
         wandb_metrics = {}
-        
         for key, value in metrics.items():
             if isinstance(value, list) and value:
                 wandb_metrics[f"phase3/{key}"] = value[-1]
-            elif isinstance(value, dict):
-                for sub_key, sub_value in value.items():
-                    if isinstance(sub_value, list) and sub_value:
-                        wandb_metrics[f"phase3/{key}/{sub_key}"] = sub_value[-1]
             elif isinstance(value, (int, float)):
                 wandb_metrics[f"phase3/{key}"] = value
         
-                        if wandb.run is not None:
-                    wandb.log(wandb_metrics, step=self.global_step)
+        try:
+            import wandb
+            if wandb.run is not None:
+                wandb.log(wandb_metrics, step=self.global_step)
+        except ImportError:
+            pass  # wandb not installed
 
 
 def run_phase3_training(config: Config, model: DynamoModel) -> Dict[str, Any]:
