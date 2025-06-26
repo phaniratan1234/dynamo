@@ -118,9 +118,18 @@ class QADataset(DynamoDataset):
             return_tensors='pt'
         )
         
-        # Get answer positions (simplified)
+        # Get answer positions and clamp to valid range
         start_pos = example.get('start_position', 0)
         end_pos = example.get('end_position', 0)
+        
+        # Clamp positions to valid range [0, max_length-1]
+        max_pos = self.max_length - 1
+        start_pos = max(0, min(start_pos, max_pos))
+        end_pos = max(start_pos, min(end_pos, max_pos))
+        
+        # Ensure end_pos >= start_pos
+        if end_pos < start_pos:
+            end_pos = start_pos
         
         return {
             'input_ids': tokenized['input_ids'].squeeze(0),
