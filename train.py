@@ -71,6 +71,14 @@ def run_evaluation(
     """Run comprehensive evaluation."""
     logger.info(f"Running {phase_name} evaluation...")
     
+    # CRITICAL: Switch model to inference mode for evaluation
+    # Save current training phase
+    original_phase = model.training_phase
+    
+    # Set to phase3 (inference mode) for evaluation
+    model.set_training_phase("phase3")
+    model.eval()  # Set to evaluation mode
+    
     # Create evaluator
     evaluator = create_evaluator(model.task_names)
     
@@ -139,6 +147,10 @@ def run_evaluation(
     # Log to wandb
     if hasattr(config, 'use_wandb') and config.use_wandb and wandb.run is not None:
         wandb.log({f"{phase_name}_evaluation": evaluation_results})
+    
+    # CRITICAL: Restore original training phase
+    model.set_training_phase(original_phase)
+    model.train()  # Set back to training mode
     
     logger.info(f"{phase_name} evaluation completed")
     return evaluation_results
