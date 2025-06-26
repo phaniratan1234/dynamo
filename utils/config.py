@@ -93,6 +93,7 @@ class EvaluationConfig:
     eval_steps: int = 500
     save_steps: int = 1000
     logging_steps: int = 100
+    eval_after_each_phase: bool = True
     
     # Metrics to compute
     compute_rouge: bool = True
@@ -159,6 +160,17 @@ def get_config(config_path: Optional[str] = None) -> Config:
             for key, value in yaml_config['model'].items():
                 if hasattr(config.model, key):
                     setattr(config.model, key, convert_value(value))
+        
+        # Handle tasks section and convert to lora_configs
+        if 'tasks' in yaml_config:
+            lora_configs = {}
+            for task_name, task_config in yaml_config['tasks'].items():
+                lora_configs[task_name] = {
+                    "rank": task_config.get("lora_rank", 4),
+                    "alpha": task_config.get("lora_alpha", 8),
+                    "dropout": task_config.get("lora_dropout", 0.1)
+                }
+            config.model.lora_configs = lora_configs
         
         if 'training' in yaml_config:
             for key, value in yaml_config['training'].items():

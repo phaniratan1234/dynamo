@@ -210,7 +210,7 @@ def main():
             training_metrics['phase1'] = phase1_metrics
             
             # Intermediate evaluation
-            if config.evaluation.eval_after_each_phase:
+            if hasattr(config.evaluation, 'eval_after_each_phase') and config.evaluation.eval_after_each_phase:
                 eval_results = run_evaluation(model, config, "phase1")
                 training_metrics['phase1_evaluation'] = eval_results
         
@@ -223,7 +223,7 @@ def main():
             training_metrics['phase2'] = phase2_metrics
             
             # Intermediate evaluation
-            if config.evaluation.eval_after_each_phase:
+            if hasattr(config.evaluation, 'eval_after_each_phase') and config.evaluation.eval_after_each_phase:
                 eval_results = run_evaluation(model, config, "phase2")
                 training_metrics['phase2_evaluation'] = eval_results
         

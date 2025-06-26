@@ -55,10 +55,32 @@ class DynamoModel(nn.Module):
         )
         
         # 2. LoRA Adapter Collection
+        # Handle both old format (lora_configs) and new format (tasks)
+        lora_configs = getattr(self.model_config, "lora_configs", {})
+        
+        # Check if using new format with tasks
+        if not lora_configs and hasattr(config, 'tasks'):
+            lora_configs = {}
+            for task_name, task_config in config.tasks.items():
+                lora_configs[task_name] = {
+                    "rank": getattr(task_config, "lora_rank", 4),
+                    "alpha": getattr(task_config, "lora_alpha", 8),
+                    "dropout": getattr(task_config, "lora_dropout", 0.1)
+                }
+        elif not lora_configs and 'tasks' in config:
+            # Dictionary format
+            lora_configs = {}
+            for task_name, task_config in config['tasks'].items():
+                lora_configs[task_name] = {
+                    "rank": task_config.get("lora_rank", 4),
+                    "alpha": task_config.get("lora_alpha", 8),
+                    "dropout": task_config.get("lora_dropout", 0.1)
+                }
+        
         adapter_config = {
             "hidden_size": self.backbone.hidden_size,
             "num_layers": 12,  # RoBERTa-base has 12 layers
-            "lora_configs": getattr(self.model_config, "lora_configs", {})
+            "lora_configs": lora_configs
         }
         self.adapters = LoRAAdapterCollection(adapter_config)
         

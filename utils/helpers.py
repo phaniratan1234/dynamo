@@ -27,7 +27,7 @@ def set_seed(seed: int):
 def count_parameters(model: torch.nn.Module, only_trainable: bool = True) -> int:
     """Count the number of parameters in a model."""
     if only_trainable:
-        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
     else:
         return sum(p.numel() for p in model.parameters())
 
