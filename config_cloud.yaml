@@ -1,64 +1,115 @@
-# Optimized config for cloud GPU training
+# DYNAMO Configuration - Cloud Version (Optimized for T4 GPUs)
+# 10 EPOCHS FOR MAXIMUM PERFORMANCE!
+
+# Model architecture settings
 model:
-  base_model_name: "roberta-base"
+  model_name: "roberta-base"
   hidden_size: 768
   num_attention_heads: 12
-  num_layers: 12
+  num_hidden_layers: 12
+  intermediate_size: 3072
   
-  # LoRA configurations - reduced for faster training
-  lora_configs:
-    sentiment:
-      rank: 8        # Reduced from 16
-      alpha: 16      # Reduced from 32
-      dropout: 0.1
-    qa:
-      rank: 16       # Reduced from 32
-      alpha: 32      # Reduced from 64
-      dropout: 0.1
-    summarization:
-      rank: 12       # Reduced from 24
-      alpha: 24      # Reduced from 48
-      dropout: 0.1
-    code_generation:
-      rank: 10       # Reduced from 20
-      alpha: 20      # Reduced from 40
-      dropout: 0.1
-    translation:
-      rank: 14       # Reduced from 28
-      alpha: 28      # Reduced from 56
-      dropout: 0.1
+# Task specifications
+tasks:
+  sentiment:
+    task_type: "classification"
+    num_labels: 2
+    lora_rank: 4
+    lora_alpha: 8
+    lora_dropout: 0.1
+    
+  qa:
+    task_type: "span_prediction"
+    lora_rank: 4
+    lora_alpha: 8
+    lora_dropout: 0.1
+    
+  summarization:
+    task_type: "generation"
+    lora_rank: 4
+    lora_alpha: 8
+    lora_dropout: 0.1
+    
+  code_generation:
+    task_type: "generation"
+    lora_rank: 4
+    lora_alpha: 8
+    lora_dropout: 0.1
+    
+  translation:
+    task_type: "generation"
+    lora_rank: 4
+    lora_alpha: 8
+    lora_dropout: 0.1
 
-training:
-  # Optimized for cloud
-  num_epochs: 3              # Reduced from 10
-  batch_size: 32             # Increased for GPU
-  learning_rate: 2e-4        # Slightly higher
-  lora_lr: 1e-3             # Higher for LoRA
-  router_lr: 5e-4           # Higher for router
-  weight_decay: 0.01
-  warmup_ratio: 0.1
-  gradient_accumulation_steps: 2  # Effective batch = 64
-  max_grad_norm: 1.0
-  patience: 2               # Reduced early stopping patience
-
+# Router settings
+router:
+  hidden_size: 512
+  num_experts: 5
+  temperature: 1.0
+  gumbel_hard: false
+  
+# Data settings (OPTIMIZED for cloud)
 data:
-  # Smaller datasets for faster training
-  max_input_length: 256     # Reduced from 512
-  max_target_length: 64     # Reduced from 128
-  sst2_size: 5000          # Reduced
-  squad_size: 10000        # Reduced  
-  xsum_size: 8000          # Reduced
-  code_gen_size: 300       # All MBPP data
-  translation_size: 6000   # Reduced
-  cache_dir: "./cache"
+  max_length: 256
+  train_batch_size: 16  # Optimized for T4 GPU
+  eval_batch_size: 32
+  num_workers: 2
+  
+  # Full datasets for training (cloud can handle more)
+  max_train_samples: 10000  # Moderate size for cloud training
+  max_eval_samples: 1000
+  max_test_samples: 1000
 
+# Training settings (10 EPOCHS FOR FAST GPUS!)
+training:
+  # Phase 1: Individual LoRA training
+  phase1:
+    num_epochs: 10  # Increased for better performance with fast GPUs
+    learning_rate: 5e-4
+    weight_decay: 1e-2
+    warmup_ratio: 0.1
+    gradient_accumulation_steps: 2  # Effective batch size = 32
+    
+  # Phase 2: Router training  
+  phase2:
+    num_epochs: 10  # Increased for better router learning
+    learning_rate: 1e-3
+    weight_decay: 1e-3
+    warmup_ratio: 0.1
+    gradient_accumulation_steps: 2
+    
+  # Phase 3: Joint fine-tuning
+  phase3:
+    num_epochs: 10  # Increased for better joint optimization
+    learning_rate: 2e-4
+    weight_decay: 1e-3
+    warmup_ratio: 0.1
+    gradient_accumulation_steps: 2
+
+# Loss function weights
+loss_weights:
+  task_loss: 1.0
+  load_balance_loss: 0.1
+  efficiency_loss: 0.05
+  consistency_loss: 0.01
+  entropy_regularization: 0.01
+
+# Evaluation settings
 evaluation:
-  eval_batch_size: 64      # Increased
-  logging_steps: 50        # More frequent logging
-  eval_steps: 200         # More frequent eval
-  save_steps: 500         # Less frequent saves
+  eval_batch_size: 32
+  logging_steps: 50
+  eval_steps: 200
+  save_steps: 500
+  eval_after_each_phase: true
 
-# Cloud-specific settings
-use_wandb: false            # Disable logging
+# System settings
+device: "cuda"
+seed: 42
 checkpoint_dir: "./checkpoints"
-output_dir: "./outputs"
+log_dir: "./logs"
+cache_dir: "./cache"
+
+# Weights & Biases settings (DISABLED for Kaggle)
+use_wandb: false
+experiment_name: "dynamo_cloud_10epochs"
