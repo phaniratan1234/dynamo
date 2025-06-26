@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: train_lora",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",   // 重点：让工作目录始终是项目根目录
+      "console": "integratedTerminal"
+    }
+  ]
+}
